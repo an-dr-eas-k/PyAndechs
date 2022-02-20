@@ -1,6 +1,7 @@
 import pygame
 import random
 import math
+import threading
 
 
 def aspect_scale(img, rect):
@@ -43,9 +44,37 @@ class Wanderer(pygame.sprite.Sprite):
             "mann-von-oben1.png"), (100, 100))
 
         self.rect = self.image.get_rect()
-        self.rect.center = (self.F_BREITE / 2, self.F_HOEHE / 2)
         self.punkte = 0
         self.promille = 0
+        self.swap = True
+        self.groessenFaktor = 1.0
+        self.groessenAenderungErlaubt = True
+        self.drawMann()
+        self.rect.center = (self.F_BREITE / 2, self.F_HOEHE / 2)
+
+
+
+
+    def drawMann(self):
+        ausdehnung = (100, 100)
+        ausdehnung = (
+            int (ausdehnung[0]*self.groessenFaktor), 
+            int (ausdehnung[1]*self.groessenFaktor))
+
+        if (self.swap):
+            self.image = aspect_scale(pygame.image.load(
+                "mann-von-oben1.png"), ausdehnung)
+            self.swap = False
+        else:
+            self.image = aspect_scale(pygame.image.load(
+                "mann-von-oben2.png"), ausdehnung)
+            self.swap = True
+
+        self.rect.width = self.image.get_rect().width
+        self.rect.height = self.image.get_rect().height
+        threading.Timer(0.3, self.drawMann).start()
+
+
 
     def update(self):
         gedrueckt = pygame.key.get_pressed()
@@ -62,8 +91,21 @@ class Wanderer(pygame.sprite.Sprite):
         if gedrueckt[pygame.K_RIGHT]:
             self.rect.x += 8 + random.randint(seed * -1, seed)
             self.rect.y += random.randint(seed * -1, seed)
+        if gedrueckt[pygame.K_SPACE]:
+            if (self.groessenAenderungErlaubt):
+                self.groessenFaktor = random.random()* 0.7 + 0.3 
+                threading.Timer(10, self.ruecksetzenGroessenFaktor).start()
+                self.groessenAenderungErlaubt = False
+                threading.Timer(30, self.groessenAenderungWiederErlaubt).start()
+                print("eine groessenaenderung wird gemacht mit faktor "+str(self.groessenFaktor ))
         self.rect.clamp_ip(pygame.Rect(0, 0, self.F_BREITE, self.F_HOEHE))
 
+    def ruecksetzenGroessenFaktor(self):
+        self.groessenFaktor = 1.0
+    
+    def groessenAenderungWiederErlaubt(self):
+        self.groessenAenderungErlaubt = True
+        print("jetzt ist groessenaenderung wieder erlaubt")
 
 class ZufallsObjekt(pygame.sprite.Sprite):
 
