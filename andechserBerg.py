@@ -1,3 +1,4 @@
+from typing import Sequence
 import pygame
 import random
 import math
@@ -175,3 +176,29 @@ def text(text, fenster, position, groesse):
     text = font.render(text, False, (0, 0, 0))
     F_BREITE = text.get_rect().width
     fenster.blit(text, (position[0] - (F_BREITE / 2), position[1]))
+
+class Strasse(pygame.sprite.Sprite):
+
+    def __init__(self, sprites, F_BREITE, F_HOEHE):
+        super().__init__()
+        self.sprites: Sequence = sprites
+        self.F_BREITE = F_BREITE
+        self.F_HOEHE = F_HOEHE
+        self._layer = 0  
+
+        self.image = aspect_scale(pygame.image.load(
+            "media/weg.png"), (self.F_BREITE, self.F_HOEHE*5))
+
+        self.rect = self.image.get_rect()
+        self.rect.center = (self.F_BREITE / 2, self.F_HOEHE / 2)
+        self.x_speed = 0
+        self.y_speed = 3
+
+    def update(self):
+        if self.rect.top > 0:
+            self.sprites.add(Strasse(self.sprites, self.F_BREITE, self.F_HOEHE))
+        if self.rect.top > self.F_HOEHE:
+            self.kill()    
+        else:
+            self.rect.x += self.x_speed
+            self.rect.y += self.y_speed
