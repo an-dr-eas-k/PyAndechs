@@ -42,7 +42,7 @@ class Wanderer(pygame.sprite.Sprite):
         self.F_HOEHE = F_HOEHE
 
         self.image = aspect_scale(pygame.image.load(
-            "mann-von-oben1.png"), (100, 100))
+            "media/mann-von-oben1.png"), (100, 100))
 
         self.rect = self.image.get_rect()
         self.punkte = 0
@@ -110,11 +110,11 @@ class Wanderer(pygame.sprite.Sprite):
 
 class ZufallsObjekt(pygame.sprite.Sprite):
 
-    bilder_top = [aspect_scale(pygame.image.load("hendl.png"), (100, 100)),
-                  aspect_scale(pygame.image.load("hendlhaxl.png"), (100, 100))]
+    bilder_top = [aspect_scale(pygame.image.load("media/hendl.png"), (100, 100)),
+                  aspect_scale(pygame.image.load("media/hendlhaxl.png"), (100, 100))]
 
-    bilder_flop = [aspect_scale(pygame.image.load("bierflasche-edit1.png"), (100, 100)),
-                   aspect_scale(pygame.image.load("cocktail-edit1.png"), (100, 100))]
+    bilder_flop = [aspect_scale(pygame.image.load("media/bierflasche-edit1.png"), (100, 100)),
+                   aspect_scale(pygame.image.load("media/cocktail-edit1.png"), (100, 100))]
 
     n = 0
 
