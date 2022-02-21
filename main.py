@@ -5,9 +5,9 @@ F_BREITE, F_HOEHE = 1000, 500
 
 pygame.init()
 fenster = pygame.display.set_mode((F_BREITE, F_HOEHE))
-sprites = pygame.sprite.Group()
-#hintergrund = andechserBerg.Strasse(sprites, F_BREITE, F_HOEHE)
-#sprites.add(hintergrund)
+sprites = pygame.sprite.LayeredUpdates()
+strasse = andechserBerg.Strasse(sprites, F_BREITE, F_HOEHE)
+sprites.add(strasse)
 wanderer = andechserBerg.Wanderer(F_BREITE, F_HOEHE)
 sprites.add(wanderer)
 uhr = pygame.time.Clock()
@@ -45,7 +45,7 @@ while True:
         t_kollision_flop = pygame.time.get_ticks()
         if wanderer.promille > 15:
           fenster.fill((255,255,255))
-          andechserBerg.text("du depp", fenster, (F_BREITE / 2, F_HOEHE / 2), 50)
+          andechserBerg.text("Magen auspumpen erforderlich", fenster, (F_BREITE / 2, F_HOEHE / 2), 50)
           andechserBerg.text(str(wanderer.punkte) + " Menüs verzehrt", fenster, (F_BREITE / 2, F_HOEHE / 2 + 60), 30)
           pygame.display.flip()
           pygame.time.wait(3000)
@@ -68,5 +68,5 @@ while True:
   andechserBerg.text("ULTI: "+str(wanderer.groessenAenderungErlaubt), fenster, (80, 10), 30)
 
   pygame.display.flip()
-  uhr.tick(45)
+  uhr.tick(55)
   

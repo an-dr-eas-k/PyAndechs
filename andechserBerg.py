@@ -38,6 +38,8 @@ class Wanderer(pygame.sprite.Sprite):
 
     def __init__(self, F_BREITE, F_HOEHE):
         super().__init__()
+        self._layer = 10
+
         self.F_BREITE = F_BREITE
         self.F_HOEHE = F_HOEHE
 
@@ -64,11 +66,11 @@ class Wanderer(pygame.sprite.Sprite):
 
         if (self.swap):
             self.image = aspect_scale(pygame.image.load(
-                "mann-von-oben1.png"), ausdehnung)
+                "media/mann-von-oben1.png"), ausdehnung)
             self.swap = False
         else:
             self.image = aspect_scale(pygame.image.load(
-                "mann-von-oben2.png"), ausdehnung)
+                "media/mann-von-oben2.png"), ausdehnung)
             self.swap = True
 
         self.rect.width = self.image.get_rect().width
@@ -121,6 +123,7 @@ class ZufallsObjekt(pygame.sprite.Sprite):
     def __init__(self, F_BREITE, F_HOEHE, sprites):
         super().__init__()
         ZufallsObjekt.n+=1
+        self._layer = 5
         self.id = ZufallsObjekt.n
         self.F_BREITE = F_BREITE
         self.F_HOEHE = F_HOEHE
@@ -184,21 +187,24 @@ class Strasse(pygame.sprite.Sprite):
         self.sprites: Sequence = sprites
         self.F_BREITE = F_BREITE
         self.F_HOEHE = F_HOEHE
-        self._layer = 0  
+        self._layer = 0
 
         self.image = aspect_scale(pygame.image.load(
             "media/weg.png"), (self.F_BREITE, self.F_HOEHE*5))
 
         self.rect = self.image.get_rect()
-        self.rect.center = (self.F_BREITE / 2, self.F_HOEHE / 2)
+        self.rect.center = (self.F_BREITE / 2, -self.F_HOEHE)
         self.x_speed = 0
         self.y_speed = 3
 
     def update(self):
-        if self.rect.top > 0:
+        if self.rect.top >= -1*self.y_speed and self.rect.top < 0:
             self.sprites.add(Strasse(self.sprites, self.F_BREITE, self.F_HOEHE))
+            print("neue strasse angelegt")
         if self.rect.top > self.F_HOEHE:
             self.kill()    
+            print ("strasse gekillt")
         else:
             self.rect.x += self.x_speed
             self.rect.y += self.y_speed
+            print("strasse verschoben, top= "+str(self.rect.top))
