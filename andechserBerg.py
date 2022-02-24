@@ -194,6 +194,7 @@ class Strasse(pygame.sprite.Sprite):
 
         self.rect = self.image.get_rect()
         self.rect.center = (self.F_BREITE / 2, -self.F_HOEHE)
+        self.rect.y = -self.rect.height
         self.x_speed = 0
         self.y_speed = 3
 

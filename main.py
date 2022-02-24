@@ -7,6 +7,7 @@ pygame.init()
 fenster = pygame.display.set_mode((F_BREITE, F_HOEHE))
 sprites = pygame.sprite.LayeredUpdates()
 strasse = andechserBerg.Strasse(sprites, F_BREITE, F_HOEHE)
+strasse.rect.y = -strasse.rect.height+F_HOEHE
 sprites.add(strasse)
 wanderer = andechserBerg.Wanderer(F_BREITE, F_HOEHE)
 sprites.add(wanderer)
