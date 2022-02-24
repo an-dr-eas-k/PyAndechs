@@ -1,9 +1,17 @@
 ﻿import pygame, sys, andechserBerg
+from pygame import mixer
 
 N_MIN_OBJEKTE = 7
 F_BREITE, F_HOEHE = 1000, 500
 
 pygame.init()
+
+mixer.init()
+mixer.music.set_volume(0.7)
+fressen = pygame.mixer.Sound("media/fressen2.ogg")
+saufen = pygame.mixer.Sound("media/saufen1.ogg")
+kotzen = pygame.mixer.Sound("media/kotzen1.ogg")
+
 fenster = pygame.display.set_mode((F_BREITE, F_HOEHE))
 sprites = pygame.sprite.LayeredUpdates()
 strasse = andechserBerg.Strasse(sprites, F_BREITE, F_HOEHE)
@@ -38,14 +46,17 @@ while True:
     if type(sprite) is andechserBerg.ZufallsObjekt and pygame.sprite.collide_rect(wanderer, sprite):
       if sprite.gut:
         wanderer.punkte +=1
+        mixer.Sound.play(fressen)
         if (wanderer.promille > 0):
           wanderer.promille -= 1
         t_kollision_top = pygame.time.get_ticks()
       else:
         wanderer.promille += 1
+        mixer.Sound.play(saufen)
         t_kollision_flop = pygame.time.get_ticks()
         if wanderer.promille > 15:
           fenster.fill((255,255,255))
+          mixer.Sound.play(kotzen)
           andechserBerg.text("Magen auspumpen erforderlich", fenster, (F_BREITE / 2, F_HOEHE / 2), 50)
           andechserBerg.text(str(wanderer.punkte) + " Menüs verzehrt", fenster, (F_BREITE / 2, F_HOEHE / 2 + 60), 30)
           pygame.display.flip()
