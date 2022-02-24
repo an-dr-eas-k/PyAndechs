@@ -59,6 +59,7 @@ while True:
           pygame.display.flip()
           pygame.time.wait(3000)
           pygame.quit()
+          os._exit(0)
       sprite.kill()
 
   if pygame.time.get_ticks() - t_kollision_flop < 100:
