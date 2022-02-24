@@ -3,6 +3,25 @@ import pygame
 import random
 import math
 import threading
+from pygame import mixer
+
+mixer.init()
+mixer.music.set_volume(0.7)
+fressen = pygame.mixer.Sound("media/fressen2.ogg")
+saufen = pygame.mixer.Sound("media/saufen1.ogg")
+kotzen = pygame.mixer.Sound("media/kotzen1.ogg")
+ultiAktiviert = pygame.mixer.Sound("media/ulti1.ogg")
+looser = pygame.mixer.Sound("media/looser1.ogg")
+winner = pygame.mixer.Sound("media/alter1.ogg")
+mega = pygame.mixer.Sound("media/megageil1.ogg")
+
+
+
+def text(text, fenster, position, groesse):
+    font = pygame.font.SysFont('arial', groesse)
+    text = font.render(text, False, (0, 0, 0))
+    F_BREITE = text.get_rect().width
+    fenster.blit(text, (position[0] - (F_BREITE / 2), position[1]))
 
 
 def aspect_scale(img, rect):
@@ -96,17 +115,29 @@ class Wanderer(pygame.sprite.Sprite):
             self.rect.y += random.randint(seed * -1, seed)
         if gedrueckt[pygame.K_SPACE]:
             if (self.groessenAenderungErlaubt):
-                self.groessenFaktor = random.random()* 0.7 + 0.3 
+                self.groessenFaktor = random.random()* 0.7 + 0.3
+                self.reagiereAufGroessenFaktor()
                 threading.Timer(10, self.ruecksetzenGroessenFaktor).start()
                 self.groessenAenderungErlaubt = False
                 threading.Timer(30, self.groessenAenderungWiederErlaubt).start()
                 print("eine groessenaenderung wird gemacht mit faktor "+str(self.groessenFaktor ))
         self.rect.clamp_ip(pygame.Rect(0, 0, self.F_BREITE, self.F_HOEHE))
 
+    def reagiereAufGroessenFaktor(self):
+        if (self.groessenFaktor > 0.7):
+            looser.play()
+            return
+        if (self.groessenFaktor > 0.4):
+            winner.play()
+            return
+        mega.play()
+        
+
     def ruecksetzenGroessenFaktor(self):
         self.groessenFaktor = 1.0
     
     def groessenAenderungWiederErlaubt(self):
+        ultiAktiviert.play()
         self.groessenAenderungErlaubt = True
         print("jetzt ist groessenaenderung wieder erlaubt")
 
@@ -174,12 +205,6 @@ class ZufallsObjekt(pygame.sprite.Sprite):
                 self.x_speed = 0  # random.randint(-2, 2)
 
 
-def text(text, fenster, position, groesse):
-    font = pygame.font.SysFont('arial', groesse)
-    text = font.render(text, False, (0, 0, 0))
-    F_BREITE = text.get_rect().width
-    fenster.blit(text, (position[0] - (F_BREITE / 2), position[1]))
-
 class Strasse(pygame.sprite.Sprite):
 
     def __init__(self, sprites, F_BREITE, F_HOEHE):
@@ -201,11 +226,8 @@ class Strasse(pygame.sprite.Sprite):
     def update(self):
         if self.rect.top >= -1*self.y_speed and self.rect.top < 0:
             self.sprites.add(Strasse(self.sprites, self.F_BREITE, self.F_HOEHE))
-            print("neue strasse angelegt")
         if self.rect.top > self.F_HOEHE:
             self.kill()    
-            print ("strasse gekillt")
         else:
             self.rect.x += self.x_speed
             self.rect.y += self.y_speed
-            print("strasse verschoben, top= "+str(self.rect.top))

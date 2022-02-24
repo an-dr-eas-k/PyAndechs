@@ -1,18 +1,14 @@
-﻿import pygame, sys, andechserBerg
-from pygame import mixer
+﻿#!python
+import pygame, sys, andechserBerg, os, signal
 
 N_MIN_OBJEKTE = 7
 F_BREITE, F_HOEHE = 1000, 500
 
 pygame.init()
 
-mixer.init()
-mixer.music.set_volume(0.7)
-fressen = pygame.mixer.Sound("media/fressen2.ogg")
-saufen = pygame.mixer.Sound("media/saufen1.ogg")
-kotzen = pygame.mixer.Sound("media/kotzen1.ogg")
+fenster = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+F_BREITE, F_HOEHE = pygame.display.get_surface().get_size()
 
-fenster = pygame.display.set_mode((F_BREITE, F_HOEHE))
 sprites = pygame.sprite.LayeredUpdates()
 strasse = andechserBerg.Strasse(sprites, F_BREITE, F_HOEHE)
 strasse.rect.y = -strasse.rect.height+F_HOEHE
@@ -31,7 +27,8 @@ while True:
   for event in pygame.event.get():
     if event.type == pygame.QUIT:
       pygame.quit()
-      sys.exit()
+      os._exit(0)
+
   
   n_neue_objekte = int (N_MIN_OBJEKTE - len(sprites) + i / 100)
   
@@ -46,23 +43,22 @@ while True:
     if type(sprite) is andechserBerg.ZufallsObjekt and pygame.sprite.collide_rect(wanderer, sprite):
       if sprite.gut:
         wanderer.punkte +=1
-        mixer.Sound.play(fressen)
+        andechserBerg.fressen.play()
         if (wanderer.promille > 0):
           wanderer.promille -= 1
         t_kollision_top = pygame.time.get_ticks()
       else:
         wanderer.promille += 1
-        mixer.Sound.play(saufen)
+        andechserBerg.saufen.play()
         t_kollision_flop = pygame.time.get_ticks()
         if wanderer.promille > 15:
           fenster.fill((255,255,255))
-          mixer.Sound.play(kotzen)
+          andechserBerg.kotzen.play()
           andechserBerg.text("Magen auspumpen erforderlich", fenster, (F_BREITE / 2, F_HOEHE / 2), 50)
           andechserBerg.text(str(wanderer.punkte) + " Menüs verzehrt", fenster, (F_BREITE / 2, F_HOEHE / 2 + 60), 30)
           pygame.display.flip()
           pygame.time.wait(3000)
           pygame.quit()
-          sys.exit()
       sprite.kill()
 
   if pygame.time.get_ticks() - t_kollision_flop < 100:
@@ -77,8 +73,7 @@ while True:
 
   andechserBerg.text("Menüs verzehrt: " + str(wanderer.punkte), fenster, (F_BREITE - 150, F_HOEHE - 50), 30)
   andechserBerg.text("Promille: {0:.1f}".format(wanderer.promille*0.1), fenster, (90, F_HOEHE - 50), 30)
-  andechserBerg.text("ULTI: "+str(wanderer.groessenAenderungErlaubt), fenster, (80, 10), 30)
 
   pygame.display.flip()
-  uhr.tick(55)
+  uhr.tick(50)
   
