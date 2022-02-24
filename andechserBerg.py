@@ -1,6 +1,27 @@
+from typing import Sequence
 import pygame
 import random
 import math
+import threading
+from pygame import mixer
+
+mixer.init()
+mixer.music.set_volume(0.7)
+fressen = pygame.mixer.Sound("media/fressen2.ogg")
+saufen = pygame.mixer.Sound("media/saufen1.ogg")
+kotzen = pygame.mixer.Sound("media/kotzen1.ogg")
+ultiAktiviert = pygame.mixer.Sound("media/ulti1.ogg")
+looser = pygame.mixer.Sound("media/looser1.ogg")
+winner = pygame.mixer.Sound("media/alter1.ogg")
+mega = pygame.mixer.Sound("media/megageil1.ogg")
+
+
+
+def text(text, fenster, position, groesse):
+    font = pygame.font.SysFont('arial', groesse)
+    text = font.render(text, False, (0, 0, 0))
+    F_BREITE = text.get_rect().width
+    fenster.blit(text, (position[0] - (F_BREITE / 2), position[1]))
 
 
 def aspect_scale(img, rect):
@@ -36,16 +57,46 @@ class Wanderer(pygame.sprite.Sprite):
 
     def __init__(self, F_BREITE, F_HOEHE):
         super().__init__()
+        self._layer = 10
+
         self.F_BREITE = F_BREITE
         self.F_HOEHE = F_HOEHE
 
         self.image = aspect_scale(pygame.image.load(
-            "mann-von-oben1.png"), (100, 100))
+            "media/mann-von-oben1.png"), (100, 100))
 
         self.rect = self.image.get_rect()
-        self.rect.center = (self.F_BREITE / 2, self.F_HOEHE / 2)
         self.punkte = 0
         self.promille = 0
+        self.swap = True
+        self.groessenFaktor = 1.0
+        self.groessenAenderungErlaubt = True
+        self.drawMann()
+        self.rect.center = (self.F_BREITE / 2, self.F_HOEHE / 2)
+
+
+
+
+    def drawMann(self):
+        ausdehnung = (100, 100)
+        ausdehnung = (
+            int (ausdehnung[0]*self.groessenFaktor), 
+            int (ausdehnung[1]*self.groessenFaktor))
+
+        if (self.swap):
+            self.image = aspect_scale(pygame.image.load(
+                "media/mann-von-oben1.png"), ausdehnung)
+            self.swap = False
+        else:
+            self.image = aspect_scale(pygame.image.load(
+                "media/mann-von-oben2.png"), ausdehnung)
+            self.swap = True
+
+        self.rect.width = self.image.get_rect().width
+        self.rect.height = self.image.get_rect().height
+        threading.Timer(0.3, self.drawMann).start()
+
+
 
     def update(self):
         gedrueckt = pygame.key.get_pressed()
@@ -62,22 +113,48 @@ class Wanderer(pygame.sprite.Sprite):
         if gedrueckt[pygame.K_RIGHT]:
             self.rect.x += 8 + random.randint(seed * -1, seed)
             self.rect.y += random.randint(seed * -1, seed)
+        if gedrueckt[pygame.K_SPACE]:
+            if (self.groessenAenderungErlaubt):
+                self.groessenFaktor = random.random()* 0.7 + 0.3
+                self.reagiereAufGroessenFaktor()
+                threading.Timer(10, self.ruecksetzenGroessenFaktor).start()
+                self.groessenAenderungErlaubt = False
+                threading.Timer(30, self.groessenAenderungWiederErlaubt).start()
+                print("eine groessenaenderung wird gemacht mit faktor "+str(self.groessenFaktor ))
         self.rect.clamp_ip(pygame.Rect(0, 0, self.F_BREITE, self.F_HOEHE))
 
+    def reagiereAufGroessenFaktor(self):
+        if (self.groessenFaktor > 0.7):
+            looser.play()
+            return
+        if (self.groessenFaktor > 0.4):
+            winner.play()
+            return
+        mega.play()
+        
+
+    def ruecksetzenGroessenFaktor(self):
+        self.groessenFaktor = 1.0
+    
+    def groessenAenderungWiederErlaubt(self):
+        ultiAktiviert.play()
+        self.groessenAenderungErlaubt = True
+        print("jetzt ist groessenaenderung wieder erlaubt")
 
 class ZufallsObjekt(pygame.sprite.Sprite):
 
-    bilder_top = [aspect_scale(pygame.image.load("hendl.png"), (100, 100)),
-                  aspect_scale(pygame.image.load("hendlhaxl.png"), (100, 100))]
+    bilder_top = [aspect_scale(pygame.image.load("media/hendl.png"), (100, 100)),
+                  aspect_scale(pygame.image.load("media/hendlhaxl.png"), (100, 100))]
 
-    bilder_flop = [aspect_scale(pygame.image.load("bierflasche-edit1.png"), (100, 100)),
-                   aspect_scale(pygame.image.load("cocktail-edit1.png"), (100, 100))]
+    bilder_flop = [aspect_scale(pygame.image.load("media/bierflasche-edit1.png"), (100, 100)),
+                   aspect_scale(pygame.image.load("media/cocktail-edit1.png"), (100, 100))]
 
     n = 0
 
     def __init__(self, F_BREITE, F_HOEHE, sprites):
         super().__init__()
         ZufallsObjekt.n+=1
+        self._layer = 5
         self.id = ZufallsObjekt.n
         self.F_BREITE = F_BREITE
         self.F_HOEHE = F_HOEHE
@@ -128,8 +205,29 @@ class ZufallsObjekt(pygame.sprite.Sprite):
                 self.x_speed = 0  # random.randint(-2, 2)
 
 
-def text(text, fenster, position, groesse):
-    font = pygame.font.SysFont('arial', groesse)
-    text = font.render(text, False, (0, 0, 0))
-    F_BREITE = text.get_rect().width
-    fenster.blit(text, (position[0] - (F_BREITE / 2), position[1]))
+class Strasse(pygame.sprite.Sprite):
+
+    def __init__(self, sprites, F_BREITE, F_HOEHE):
+        super().__init__()
+        self.sprites: Sequence = sprites
+        self.F_BREITE = F_BREITE
+        self.F_HOEHE = F_HOEHE
+        self._layer = 0
+
+        self.image = aspect_scale(pygame.image.load(
+            "media/weg.png"), (self.F_BREITE, self.F_HOEHE*5))
+
+        self.rect = self.image.get_rect()
+        self.rect.center = (self.F_BREITE / 2, -self.F_HOEHE)
+        self.rect.y = -self.rect.height
+        self.x_speed = 0
+        self.y_speed = 3
+
+    def update(self):
+        if self.rect.top >= -1*self.y_speed and self.rect.top < 0:
+            self.sprites.add(Strasse(self.sprites, self.F_BREITE, self.F_HOEHE))
+        if self.rect.top > self.F_HOEHE:
+            self.kill()    
+        else:
+            self.rect.x += self.x_speed
+            self.rect.y += self.y_speed
