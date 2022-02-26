@@ -3,7 +3,7 @@ import pygame
 import random
 import math
 import threading
-from pygame import mixer
+from pygame import Surface, mixer
 
 class Toene:
 
@@ -21,12 +21,12 @@ class Toene:
 
 
 class Helfer:
-  def text(text, fenster, position, groesse):
+  def text(text, fenster, position, groesse, farbe = (0,0,0))->Surface:
     font = pygame.font.SysFont('arial', groesse)
-    text = font.render(text, False, (0, 0, 0))
-    breite = text.get_rect().width
-    fenster.blit(text, (position[0] - (breite / 2), position[1]))
-
+    sf = font.render(text, False, farbe)
+    breite = sf.get_rect().width
+    fenster.blit(sf, (position[0] - (breite / 2), position[1]))
+    return sf
 
   def aspect_scale(img, rect):
     """ Scales 'img' to fit into box bx/by.

@@ -1,5 +1,4 @@
-﻿from multiprocessing.dummy import Event
-import pygame, andechserBerg, os
+﻿import pygame, andechserBerg, os
 
 pygame.init()
 GESTORBEN = pygame.USEREVENT+1
@@ -7,14 +6,45 @@ STARTE_WANDERUNG = pygame.USEREVENT+2
 
 class Lobby:
   def __init__(self, fenster:pygame.Surface, toene) -> None:
-      pass
+    self.fenster = fenster
+    self.sprites = pygame.sprite.Group()
+    self.uhr = pygame.time.Clock()
 
-  def anzeigen(self) -> pygame.event.Event: pass
+  def anzeigen(self) -> pygame.event.Event: 
+    f = pygame.sprite.Sprite()
+    f.image = andechserBerg.Helfer.aspect_scale(pygame.image.load(
+      "media/lobby1.png"), (self.fenster.get_width(), self.fenster.get_width()) ) 
+    f.rect = f.image.get_rect()
+    self.sprites.add(f)
+
+    i = 0
+    while True:
+      i +=1
+      for event in pygame.event.get():
+        if (event.type == pygame.KEYUP):
+          if(event.key == pygame.K_SPACE):
+            return pygame.event.Event(STARTE_WANDERUNG)
+          if(event.key == pygame.K_q):
+            os._exit(0)
+
+      self.sprites.update()
+      self.sprites.draw(self.fenster)
+
+      if (i % 30 <= 15):
+        andechserBerg.Helfer \
+          .text("Zum Starten: Hau auf die Leertaste!", self.fenster, (400, self.fenster.get_height() - 300), 50, (255,0,0))
+ 
+      andechserBerg.Helfer.text("Ulti einsetzen: Space", self.fenster, (self.fenster.get_width() - 200, self.fenster.get_height() - 70), 50)
+
+      pygame.display.flip()
+      self.uhr.tick(50)
+
+
 
 class Wanderung:
 
   N_MIN_OBJEKTE = 7
-  MAX_PROMILLE = 15
+  MAX_PROMILLE = 2
 
   def __init__(self, fenster:pygame.Surface, toene):
     super().__init__()
@@ -40,8 +70,7 @@ class Wanderung:
       for event in pygame.event.get():
         if (False
           or event.type == GESTORBEN
-          or event.type == pygame.QUIT):
-          print ("ende")
+          or event.type == pygame.KEYUP and event.key == pygame.K_q):
           return event
 
       
@@ -107,19 +136,19 @@ class Game:
 
   def spiele(self): 
     while True:
-#      lobbyEvent = self.Lobby.anzeigen()
+      lobbyEvent = self.Lobby.anzeigen()
 
-#      if (lobbyEvent.type == STARTE_WANDERUNG):
+      if (lobbyEvent.type == STARTE_WANDERUNG):
         self.Wanderung = Wanderung(self.fenster, self.toene)
         wanderungsEvent = self.Wanderung.wandere()
         if (wanderungsEvent.type == pygame.QUIT):
           pygame.quit()
           os._exit(0)
-#      else:
- #       pygame.quit()
-  #      os._exit(0)
+      else:
+        pygame.quit()
+        os._exit(0)
       
 
 
-w = Game()
-w.spiele()
+spiel = Game()
+spiel.spiele()
