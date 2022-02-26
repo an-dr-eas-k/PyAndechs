@@ -1,15 +1,20 @@
-﻿import pygame, andechserBerg, os
+﻿from multiprocessing.dummy import Event
+import pygame, andechserBerg, os
 
 pygame.init()
-
+GESTORBEN = pygame.USEREVENT+1
+STARTE_WANDERUNG = pygame.USEREVENT+2
 
 class Lobby:
   def __init__(self, fenster:pygame.Surface, toene) -> None:
       pass
 
+  def anzeigen(self) -> pygame.event.Event: pass
+
 class Wanderung:
 
   N_MIN_OBJEKTE = 7
+  MAX_PROMILLE = 15
 
   def __init__(self, fenster:pygame.Surface, toene):
     super().__init__()
@@ -27,15 +32,17 @@ class Wanderung:
     self.t_kollision_top = -100
     self.t_kollision_flop= -100
 
-  def wandere(self):
+  def wandere(self) -> pygame.event.Event:
     i = 0
 
     while True:
       i+=1
       for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-          pygame.quit()
-          os._exit(0)
+        if (False
+          or event.type == GESTORBEN
+          or event.type == pygame.QUIT):
+          print ("ende")
+          return event
 
       
       n_neue_objekte = int (self.N_MIN_OBJEKTE - len(self.sprites) + i / 100)
@@ -59,8 +66,8 @@ class Wanderung:
             self.wanderer.promille += 1
             self.toene.saufen.play()
             self.t_kollision_flop = pygame.time.get_ticks()
-            if self.wanderer.promille > 15:
-              self.beende()
+            if self.wanderer.promille > self.MAX_PROMILLE:
+              self.sterbe()
           sprite.kill()
 
       if pygame.time.get_ticks() - self.t_kollision_flop < 100:
@@ -79,15 +86,14 @@ class Wanderung:
       pygame.display.flip()
       self.uhr.tick(50)
 
-  def beende(self):
+  def sterbe(self):
     self.fenster.fill((255,255,255))
     self.toene.kotzen.play()
     andechserBerg.Helfer.text("Magen auspumpen erforderlich", self.fenster, (self.fenster.get_width() / 2, self.fenster.get_height() / 2), 50)
     andechserBerg.Helfer.text(str(self.wanderer.punkte) + " Menüs verzehrt", self.fenster, (self.fenster.get_width() / 2, self.fenster.get_height() / 2 + 60), 30)
     pygame.display.flip()
     pygame.time.wait(3000)
-    pygame.quit()
-    os._exit(0)
+    pygame.event.post(pygame.event.Event(GESTORBEN))
 
 class Game:
   def __init__(self) -> None:
@@ -96,11 +102,23 @@ class Game:
     self.fenster = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 
     self.Lobby = Lobby(self.fenster, self.toene)
-    self.Wanderung = Wanderung(self.fenster, self.toene)
+
+
 
   def spiele(self): 
     while True:
-      self.Wanderung.wandere()
+#      lobbyEvent = self.Lobby.anzeigen()
+
+#      if (lobbyEvent.type == STARTE_WANDERUNG):
+        self.Wanderung = Wanderung(self.fenster, self.toene)
+        wanderungsEvent = self.Wanderung.wandere()
+        if (wanderungsEvent.type == pygame.QUIT):
+          pygame.quit()
+          os._exit(0)
+#      else:
+ #       pygame.quit()
+  #      os._exit(0)
+      
 
 
 w = Game()
