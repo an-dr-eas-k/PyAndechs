@@ -44,7 +44,7 @@ class Lobby:
 class Wanderung:
 
   N_MIN_OBJEKTE = 7
-  MAX_PROMILLE = 2
+  MAX_PROMILLE = 15
 
   def __init__(self, fenster:pygame.Surface, toene):
     super().__init__()
