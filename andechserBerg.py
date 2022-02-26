@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, Tuple
 import pygame
 import random
 import math
@@ -24,8 +24,8 @@ class Helfer:
   def text(text, fenster, position, groesse):
     font = pygame.font.SysFont('arial', groesse)
     text = font.render(text, False, (0, 0, 0))
-    F_BREITE = text.get_rect().width
-    fenster.blit(text, (position[0] - (F_BREITE / 2), position[1]))
+    breite = text.get_rect().width
+    fenster.blit(text, (position[0] - (breite / 2), position[1]))
 
 
   def aspect_scale(img, rect):
@@ -59,13 +59,13 @@ class Helfer:
 
 class Wanderer(pygame.sprite.Sprite):
 
-  def __init__(self, toene, F_BREITE, F_HOEHE):
+  def __init__(self, toene, f_rect:Tuple[int, int]):
     super().__init__()
     self.toene = toene
     self._layer = 10
 
-    self.F_BREITE = F_BREITE
-    self.F_HOEHE = F_HOEHE
+    self.F_BREITE = f_rect[0]
+    self.F_HOEHE = f_rect[1]
 
     self.image = Helfer.aspect_scale(pygame.image.load(
       "media/mann-von-oben1.png"), (100, 100))
@@ -156,13 +156,13 @@ class ZufallsObjekt(pygame.sprite.Sprite):
 
   n = 0
 
-  def __init__(self, F_BREITE, F_HOEHE, sprites):
+  def __init__(self, f_rect:Tuple[int, int], sprites):
     super().__init__()
     ZufallsObjekt.n+=1
     self._layer = 5
     self.id = ZufallsObjekt.n
-    self.F_BREITE = F_BREITE
-    self.F_HOEHE = F_HOEHE
+    self.F_BREITE = f_rect[0]
+    self.F_HOEHE = f_rect[1]
 
     self.gut = random.choices(population=[True, False], weights=[0.1,0.9])[0]
 
@@ -202,11 +202,11 @@ class ZufallsObjekt(pygame.sprite.Sprite):
 
 class Strasse(pygame.sprite.Sprite):
 
-  def __init__(self, sprites, F_BREITE, F_HOEHE):
+  def __init__(self, sprites, f_rect:Tuple[int, int]):
     super().__init__()
     self.sprites: Sequence = sprites
-    self.F_BREITE = F_BREITE
-    self.F_HOEHE = F_HOEHE
+    self.F_BREITE = f_rect[0]
+    self.F_HOEHE = f_rect[1]
     self._layer = 0
 
     self.image = Helfer.aspect_scale(pygame.image.load(
@@ -220,7 +220,7 @@ class Strasse(pygame.sprite.Sprite):
 
   def update(self):
     if self.rect.top >= -1*self.y_speed and self.rect.top < 0:
-      self.sprites.add(Strasse(self.sprites, self.F_BREITE, self.F_HOEHE))
+      self.sprites.add(Strasse(self.sprites, (self.F_BREITE, self.F_HOEHE)))
     if self.rect.top > self.F_HOEHE:
       self.kill()    
     else:

@@ -3,22 +3,24 @@
 pygame.init()
 
 
+class Lobby:
+  def __init__(self, fenster:pygame.Surface, toene) -> None:
+      pass
+
 class Wanderung:
 
   N_MIN_OBJEKTE = 7
 
-  def __init__(self):
+  def __init__(self, fenster:pygame.Surface, toene):
     super().__init__()
-    self.toene = andechserBerg.Toene()
-
-    self.fenster = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-    self.F_BREITE, self.F_HOEHE = pygame.display.get_surface().get_size()
+    self.fenster = fenster
+    self.toene = toene
 
     self.sprites = pygame.sprite.LayeredUpdates()
-    self.strasse = andechserBerg.Strasse(self.sprites, self.F_BREITE, self.F_HOEHE)
-    self.strasse.rect.y = -self.strasse.rect.height+self.F_HOEHE
+    self.strasse = andechserBerg.Strasse(self.sprites, self.fenster.get_size())
+    self.strasse.rect.y = -self.strasse.rect.height+self.fenster.get_height()
     self.sprites.add(self.strasse)
-    self.wanderer = andechserBerg.Wanderer(self.toene, self.F_BREITE, self.F_HOEHE)
+    self.wanderer = andechserBerg.Wanderer(self.toene, self.fenster.get_size())
     self.sprites.add(self.wanderer)
     self.uhr = pygame.time.Clock()
 
@@ -40,7 +42,7 @@ class Wanderung:
       
       for j in range(n_neue_objekte):
         try:
-          self.sprites.add(andechserBerg.ZufallsObjekt(self.F_BREITE, self.F_HOEHE, self.sprites))
+          self.sprites.add(andechserBerg.ZufallsObjekt(self.fenster.get_size(), self.sprites))
         except:
           pass
           
@@ -58,14 +60,7 @@ class Wanderung:
             self.toene.saufen.play()
             self.t_kollision_flop = pygame.time.get_ticks()
             if self.wanderer.promille > 15:
-              self.fenster.fill((255,255,255))
-              self.toene.kotzen.play()
-              andechserBerg.Helfer.text("Magen auspumpen erforderlich", self.fenster, (self.F_BREITE / 2, self.F_HOEHE / 2), 50)
-              andechserBerg.Helfer.text(str(self.wanderer.punkte) + " Menüs verzehrt", self.fenster, (self.F_BREITE / 2, self.F_HOEHE / 2 + 60), 30)
-              pygame.display.flip()
-              pygame.time.wait(3000)
-              pygame.quit()
-              os._exit(0)
+              self.beende()
           sprite.kill()
 
       if pygame.time.get_ticks() - self.t_kollision_flop < 100:
@@ -78,11 +73,35 @@ class Wanderung:
       self.sprites.update()
       self.sprites.draw(self.fenster)
 
-      andechserBerg.Helfer.text("Menüs verzehrt: " + str(self.wanderer.punkte), self.fenster, (self.F_BREITE - 150, self.F_HOEHE - 50), 30)
-      andechserBerg.Helfer.text("Promille: {0:.1f}".format(self.wanderer.promille*0.1), self.fenster, (90, self.F_HOEHE - 50), 30)
+      andechserBerg.Helfer.text("Menüs verzehrt: " + str(self.wanderer.punkte), self.fenster, (self.fenster.get_width() - 150, self.fenster.get_height() - 50), 30)
+      andechserBerg.Helfer.text("Promille: {0:.1f}".format(self.wanderer.promille*0.1), self.fenster, (90, self.fenster.get_height() - 50), 30)
 
       pygame.display.flip()
       self.uhr.tick(50)
-      
-w = Wanderung()
-w.wandere()
+
+  def beende(self):
+    self.fenster.fill((255,255,255))
+    self.toene.kotzen.play()
+    andechserBerg.Helfer.text("Magen auspumpen erforderlich", self.fenster, (self.fenster.get_width() / 2, self.fenster.get_height() / 2), 50)
+    andechserBerg.Helfer.text(str(self.wanderer.punkte) + " Menüs verzehrt", self.fenster, (self.fenster.get_width() / 2, self.fenster.get_height() / 2 + 60), 30)
+    pygame.display.flip()
+    pygame.time.wait(3000)
+    pygame.quit()
+    os._exit(0)
+
+class Game:
+  def __init__(self) -> None:
+    self.toene = andechserBerg.Toene()
+
+    self.fenster = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+
+    self.Lobby = Lobby(self.fenster, self.toene)
+    self.Wanderung = Wanderung(self.fenster, self.toene)
+
+  def spiele(self): 
+    while True:
+      self.Wanderung.wandere()
+
+
+w = Game()
+w.spiele()
