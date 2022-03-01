@@ -1,3 +1,4 @@
+import time
 from typing import Sequence, Tuple
 import pygame
 import random
@@ -73,9 +74,9 @@ class Wanderer(pygame.sprite.Sprite):
     self.rect = self.image.get_rect()
     self.punkte = 0
     self.promille = 0
-    self.swap = True
     self.groessenFaktor = 1.0
     self.groessenAenderungErlaubt = True
+    self.letzteGroessenAenderung = 0
     self.drawMann()
     self.rect.center = (self.F_BREITE / 2, self.F_HOEHE / 2)
 
@@ -88,7 +89,7 @@ class Wanderer(pygame.sprite.Sprite):
       int (ausdehnung[0]*self.groessenFaktor), 
       int (ausdehnung[1]*self.groessenFaktor))
 
-    if (self.swap):
+    if (int (time.time() * 8 ) % 10 < 5):
       self.image = Helfer.aspect_scale(pygame.image.load(
         "media/mann-von-oben1.png"), ausdehnung)
       self.swap = False
@@ -99,11 +100,16 @@ class Wanderer(pygame.sprite.Sprite):
 
     self.rect.width = self.image.get_rect().width
     self.rect.height = self.image.get_rect().height
-    threading.Timer(0.3, self.drawMann).start()
+
 
 
 
   def update(self):
+    if (time.time() * 1000 - self.letzteGroessenAenderung > 10000):
+      self.ruecksetzenGroessenFaktor()
+    if (not (self.groessenAenderungErlaubt) and time.time() * 1000 - self.letzteGroessenAenderung > 30000):
+      self.groessenAenderungWiederErlaubt()
+
     gedrueckt = pygame.key.get_pressed()
     seed = math.floor(math.sqrt(self.promille * 20))
     if gedrueckt[pygame.K_UP]:
@@ -122,11 +128,11 @@ class Wanderer(pygame.sprite.Sprite):
       if (self.groessenAenderungErlaubt):
         self.groessenFaktor = random.random()* 0.7 + 0.3
         self.reagiereAufGroessenFaktor()
-        threading.Timer(10, self.ruecksetzenGroessenFaktor).start()
+        self.letzteGroessenAenderung = int (time.time() * 1000)
         self.groessenAenderungErlaubt = False
-        threading.Timer(30, self.groessenAenderungWiederErlaubt).start()
         print("eine groessenaenderung wird gemacht mit faktor "+str(self.groessenFaktor ))
     self.rect.clamp_ip(pygame.Rect(0, 0, self.F_BREITE, self.F_HOEHE))
+    self.drawMann()
 
   def reagiereAufGroessenFaktor(self):
     if (self.groessenFaktor > 0.7):
@@ -135,8 +141,7 @@ class Wanderer(pygame.sprite.Sprite):
     if (self.groessenFaktor > 0.4):
       self.toene.winner.play()
       return
-    self.toene.mega.play()
-        
+    self.toene.mega.play()   
 
   def ruecksetzenGroessenFaktor(self):
     self.groessenFaktor = 1.0
