@@ -1,9 +1,10 @@
-from typing import Sequence
+import time
+from typing import Sequence, Tuple
 import pygame
 import random
 import math
 import threading
-from pygame import mixer
+from pygame import Surface, mixer
 
 class Toene:
 
@@ -21,12 +22,12 @@ class Toene:
 
 
 class Helfer:
-  def text(text, fenster, position, groesse):
+  def text(text, fenster, position, groesse, farbe = (0,0,0))->Surface:
     font = pygame.font.SysFont('arial', groesse)
-    text = font.render(text, False, (0, 0, 0))
-    F_BREITE = text.get_rect().width
-    fenster.blit(text, (position[0] - (F_BREITE / 2), position[1]))
-
+    sf = font.render(text, False, farbe)
+    breite = sf.get_rect().width
+    fenster.blit(sf, (position[0] - (breite / 2), position[1]))
+    return sf
 
   def aspect_scale(img, rect):
     """ Scales 'img' to fit into box bx/by.
@@ -59,13 +60,13 @@ class Helfer:
 
 class Wanderer(pygame.sprite.Sprite):
 
-  def __init__(self, toene, F_BREITE, F_HOEHE):
+  def __init__(self, toene, f_rect:Tuple[int, int]):
     super().__init__()
     self.toene = toene
     self._layer = 10
 
-    self.F_BREITE = F_BREITE
-    self.F_HOEHE = F_HOEHE
+    self.F_BREITE = f_rect[0]
+    self.F_HOEHE = f_rect[1]
 
     self.image = Helfer.aspect_scale(pygame.image.load(
       "media/mann-von-oben1.png"), (100, 100))
@@ -73,9 +74,9 @@ class Wanderer(pygame.sprite.Sprite):
     self.rect = self.image.get_rect()
     self.punkte = 0
     self.promille = 0
-    self.swap = True
     self.groessenFaktor = 1.0
     self.groessenAenderungErlaubt = True
+    self.letzteGroessenAenderung = 0
     self.drawMann()
     self.rect.center = (self.F_BREITE / 2, self.F_HOEHE / 2)
 
@@ -88,7 +89,7 @@ class Wanderer(pygame.sprite.Sprite):
       int (ausdehnung[0]*self.groessenFaktor), 
       int (ausdehnung[1]*self.groessenFaktor))
 
-    if (self.swap):
+    if (int (time.time() * 8 ) % 10 < 5):
       self.image = Helfer.aspect_scale(pygame.image.load(
         "media/mann-von-oben1.png"), ausdehnung)
       self.swap = False
@@ -99,11 +100,16 @@ class Wanderer(pygame.sprite.Sprite):
 
     self.rect.width = self.image.get_rect().width
     self.rect.height = self.image.get_rect().height
-    threading.Timer(0.3, self.drawMann).start()
+
 
 
 
   def update(self):
+    if (time.time() * 1000 - self.letzteGroessenAenderung > 10000):
+      self.ruecksetzenGroessenFaktor()
+    if (not (self.groessenAenderungErlaubt) and time.time() * 1000 - self.letzteGroessenAenderung > 30000):
+      self.groessenAenderungWiederErlaubt()
+
     gedrueckt = pygame.key.get_pressed()
     seed = math.floor(math.sqrt(self.promille * 20))
     if gedrueckt[pygame.K_UP]:
@@ -122,11 +128,11 @@ class Wanderer(pygame.sprite.Sprite):
       if (self.groessenAenderungErlaubt):
         self.groessenFaktor = random.random()* 0.7 + 0.3
         self.reagiereAufGroessenFaktor()
-        threading.Timer(10, self.ruecksetzenGroessenFaktor).start()
+        self.letzteGroessenAenderung = int (time.time() * 1000)
         self.groessenAenderungErlaubt = False
-        threading.Timer(30, self.groessenAenderungWiederErlaubt).start()
         print("eine groessenaenderung wird gemacht mit faktor "+str(self.groessenFaktor ))
     self.rect.clamp_ip(pygame.Rect(0, 0, self.F_BREITE, self.F_HOEHE))
+    self.drawMann()
 
   def reagiereAufGroessenFaktor(self):
     if (self.groessenFaktor > 0.7):
@@ -135,8 +141,7 @@ class Wanderer(pygame.sprite.Sprite):
     if (self.groessenFaktor > 0.4):
       self.toene.winner.play()
       return
-    self.toene.mega.play()
-        
+    self.toene.mega.play()   
 
   def ruecksetzenGroessenFaktor(self):
     self.groessenFaktor = 1.0
@@ -156,13 +161,13 @@ class ZufallsObjekt(pygame.sprite.Sprite):
 
   n = 0
 
-  def __init__(self, F_BREITE, F_HOEHE, sprites):
+  def __init__(self, f_rect:Tuple[int, int], sprites):
     super().__init__()
     ZufallsObjekt.n+=1
     self._layer = 5
     self.id = ZufallsObjekt.n
-    self.F_BREITE = F_BREITE
-    self.F_HOEHE = F_HOEHE
+    self.F_BREITE = f_rect[0]
+    self.F_HOEHE = f_rect[1]
 
     self.gut = random.choices(population=[True, False], weights=[0.1,0.9])[0]
 
@@ -202,11 +207,11 @@ class ZufallsObjekt(pygame.sprite.Sprite):
 
 class Strasse(pygame.sprite.Sprite):
 
-  def __init__(self, sprites, F_BREITE, F_HOEHE):
+  def __init__(self, sprites, f_rect:Tuple[int, int]):
     super().__init__()
     self.sprites: Sequence = sprites
-    self.F_BREITE = F_BREITE
-    self.F_HOEHE = F_HOEHE
+    self.F_BREITE = f_rect[0]
+    self.F_HOEHE = f_rect[1]
     self._layer = 0
 
     self.image = Helfer.aspect_scale(pygame.image.load(
@@ -220,7 +225,7 @@ class Strasse(pygame.sprite.Sprite):
 
   def update(self):
     if self.rect.top >= -1*self.y_speed and self.rect.top < 0:
-      self.sprites.add(Strasse(self.sprites, self.F_BREITE, self.F_HOEHE))
+      self.sprites.add(Strasse(self.sprites, (self.F_BREITE, self.F_HOEHE)))
     if self.rect.top > self.F_HOEHE:
       self.kill()    
     else:

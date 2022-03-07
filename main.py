@@ -1,46 +1,84 @@
 ﻿import pygame, andechserBerg, os
 
 pygame.init()
+GESTORBEN = pygame.USEREVENT+1
+STARTE_WANDERUNG = pygame.USEREVENT+2
+
+class Lobby:
+  def __init__(self, fenster:pygame.Surface, toene) -> None:
+    self.fenster = fenster
+    self.sprites = pygame.sprite.Group()
+    self.uhr = pygame.time.Clock()
+
+  def anzeigen(self) -> pygame.event.Event: 
+    f = pygame.sprite.Sprite()
+    f.image = andechserBerg.Helfer.aspect_scale(pygame.image.load(
+      "media/lobby1.png"), (self.fenster.get_width(), self.fenster.get_width()) ) 
+    f.rect = f.image.get_rect()
+    self.sprites.add(f)
+
+    i = 0
+    while True:
+      i +=1
+      for event in pygame.event.get():
+        if (event.type == pygame.KEYUP):
+          if(event.key == pygame.K_SPACE):
+            return pygame.event.Event(STARTE_WANDERUNG)
+          if(event.key == pygame.K_q):
+            os._exit(0)
+
+      self.sprites.update()
+      self.sprites.draw(self.fenster)
+
+      if (i % 30 <= 15):
+        andechserBerg.Helfer \
+          .text("Zum Starten: Hau auf die Leertaste!", self.fenster, (400, self.fenster.get_height() - 300), 50, (255,0,0))
+ 
+      andechserBerg.Helfer.text("Ulti einsetzen: Space", self.fenster, (self.fenster.get_width() - 200, self.fenster.get_height() - 70), 50)
+
+      pygame.display.flip()
+      self.uhr.tick(50)
+
 
 
 class Wanderung:
 
   N_MIN_OBJEKTE = 7
+  MAX_PROMILLE = 15
 
-  def __init__(self):
+  def __init__(self, fenster:pygame.Surface, toene):
     super().__init__()
-    self.toene = andechserBerg.Toene()
-
-    self.fenster = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-    self.F_BREITE, self.F_HOEHE = pygame.display.get_surface().get_size()
+    self.fenster = fenster
+    self.toene = toene
 
     self.sprites = pygame.sprite.LayeredUpdates()
-    self.strasse = andechserBerg.Strasse(self.sprites, self.F_BREITE, self.F_HOEHE)
-    self.strasse.rect.y = -self.strasse.rect.height+self.F_HOEHE
+    self.strasse = andechserBerg.Strasse(self.sprites, self.fenster.get_size())
+    self.strasse.rect.y = -self.strasse.rect.height+self.fenster.get_height()
     self.sprites.add(self.strasse)
-    self.wanderer = andechserBerg.Wanderer(self.toene, self.F_BREITE, self.F_HOEHE)
+    self.wanderer = andechserBerg.Wanderer(self.toene, self.fenster.get_size())
     self.sprites.add(self.wanderer)
     self.uhr = pygame.time.Clock()
 
     self.t_kollision_top = -100
     self.t_kollision_flop= -100
 
-  def wandere(self):
+  def wandere(self) -> pygame.event.Event:
     i = 0
 
     while True:
       i+=1
       for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-          pygame.quit()
-          os._exit(0)
+        if (False
+          or event.type == GESTORBEN
+          or event.type == pygame.KEYUP and event.key == pygame.K_q):
+          return event
 
       
       n_neue_objekte = int (self.N_MIN_OBJEKTE - len(self.sprites) + i / 100)
       
       for j in range(n_neue_objekte):
         try:
-          self.sprites.add(andechserBerg.ZufallsObjekt(self.F_BREITE, self.F_HOEHE, self.sprites))
+          self.sprites.add(andechserBerg.ZufallsObjekt(self.fenster.get_size(), self.sprites))
         except:
           pass
           
@@ -57,15 +95,8 @@ class Wanderung:
             self.wanderer.promille += 1
             self.toene.saufen.play()
             self.t_kollision_flop = pygame.time.get_ticks()
-            if self.wanderer.promille > 15:
-              self.fenster.fill((255,255,255))
-              self.toene.kotzen.play()
-              andechserBerg.Helfer.text("Magen auspumpen erforderlich", self.fenster, (self.F_BREITE / 2, self.F_HOEHE / 2), 50)
-              andechserBerg.Helfer.text(str(self.wanderer.punkte) + " Menüs verzehrt", self.fenster, (self.F_BREITE / 2, self.F_HOEHE / 2 + 60), 30)
-              pygame.display.flip()
-              pygame.time.wait(3000)
-              pygame.quit()
-              os._exit(0)
+            if self.wanderer.promille > self.MAX_PROMILLE:
+              self.sterbe()
           sprite.kill()
 
       if pygame.time.get_ticks() - self.t_kollision_flop < 100:
@@ -78,11 +109,46 @@ class Wanderung:
       self.sprites.update()
       self.sprites.draw(self.fenster)
 
-      andechserBerg.Helfer.text("Menüs verzehrt: " + str(self.wanderer.punkte), self.fenster, (self.F_BREITE - 150, self.F_HOEHE - 50), 30)
-      andechserBerg.Helfer.text("Promille: {0:.1f}".format(self.wanderer.promille*0.1), self.fenster, (90, self.F_HOEHE - 50), 30)
+      andechserBerg.Helfer.text("Menüs verzehrt: " + str(self.wanderer.punkte), self.fenster, (self.fenster.get_width() - 150, self.fenster.get_height() - 50), 30)
+      andechserBerg.Helfer.text("Promille: {0:.1f}".format(self.wanderer.promille*0.1), self.fenster, (90, self.fenster.get_height() - 50), 30)
 
       pygame.display.flip()
       self.uhr.tick(50)
+
+  def sterbe(self):
+    self.fenster.fill((255,255,255))
+    self.toene.kotzen.play()
+    andechserBerg.Helfer.text("Magen auspumpen erforderlich", self.fenster, (self.fenster.get_width() / 2, self.fenster.get_height() / 2), 50)
+    andechserBerg.Helfer.text(str(self.wanderer.punkte) + " Menüs verzehrt", self.fenster, (self.fenster.get_width() / 2, self.fenster.get_height() / 2 + 60), 30)
+    pygame.display.flip()
+    pygame.time.wait(3000)
+    pygame.event.post(pygame.event.Event(GESTORBEN))
+
+class Game:
+  def __init__(self) -> None:
+    self.toene = andechserBerg.Toene()
+
+    self.fenster = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+
+    self.Lobby = Lobby(self.fenster, self.toene)
+
+
+
+  def spiele(self): 
+    while True:
+      lobbyEvent = self.Lobby.anzeigen()
+
+      if (lobbyEvent.type == STARTE_WANDERUNG):
+        self.Wanderung = Wanderung(self.fenster, self.toene)
+        wanderungsEvent = self.Wanderung.wandere()
+        if (wanderungsEvent.type == pygame.QUIT):
+          pygame.quit()
+          os._exit(0)
+      else:
+        pygame.quit()
+        os._exit(0)
       
-w = Wanderung()
-w.wandere()
+
+
+spiel = Game()
+spiel.spiele()
